@@ -87,10 +87,6 @@ class Lakefile(ABC):
         """Update the lakefile to add a requirement for checkdecls"""
         pass
 
-    @abstractmethod
-    def add_docgen(self) -> None:
-        """Update the lakefile to add a requirement for docgen"""
-        pass
 
 class LakefileLean(Lakefile):
     def __init__(self, lakefile_lean: Path):
@@ -119,14 +115,6 @@ class LakefileLean(Lakefile):
         with self.path.open("a") as lf:
             lf.write('\nrequire checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"')
 
-    def add_docgen(self) -> None:
-        """see `super.add_docgen"""
-        with self.path.open("a", encoding="utf8") as lf:
-            lf.write(dedent('''
-
-                meta if get_config? env = some "dev" then
-                require «doc-gen4» from git
-                  "https://github.com/leanprover/doc-gen4" @ "main"'''))
 
 class LakefileToml(Lakefile):
     def __init__(self, lakefile_toml: Path):
@@ -150,9 +138,6 @@ class LakefileToml(Lakefile):
         """see `super.add_checkdecls`"""
         self._add_require("checkdecls", "https://github.com/PatrickMassot/checkdecls.git")
 
-    def add_docgen(self) -> None:
-        """see `super.add_docgen`"""
-        self._add_require("«doc-gen4»", "https://github.com/leanprover/doc-gen4", rev="main")
 
     def _add_require(self, name:str, git:str, rev:Optional[str] = None) -> None:
         """Add a [[require]] to self._toml and dump it"""
@@ -398,13 +383,7 @@ def new() -> None:
         subprocess.run("lake update checkdecls",
                        cwd=str(blueprint_root.parent), check=False, shell=True)
 
-    if confirm("Modify lakefile and lake-manifest to allow building the documentation?",
-               default=True):
-        lakefile.add_docgen()
-        console.print("Ok, lakefile is edited. Will now get the doc-gen library.")
-        subprocess.run("lake -R -Kenv=dev update doc-gen4",
-                       cwd=str(blueprint_root.parent), check=False, shell=True)
-        
+
     home_page_created = False
 
     if confirm("Do you want to create a home page for the project, "

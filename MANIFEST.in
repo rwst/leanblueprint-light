@@ -1,4 +1,4 @@
-include leanblueprint/static/*
-recursive-include leanblueprint/templates *
-recursive-include leanblueprint/jekyll_templates *
-include leanblueprint/Packages/renderer_templates/*
+include leanblueprint_light/static/*
+recursive-include leanblueprint_light/templates *
+recursive-include leanblueprint_light/jekyll_templates *
+include leanblueprint_light/Packages/renderer_templates/*

@@ -126,14 +126,14 @@ CHECKMARK_TPL = Template("""
 
 LEAN_DECLS_TPL = Template("""
     {% if obj.userdata.leandecls %}
-    <button class="modal lean">L∃∀N</button>
-    {% call modal('Lean declarations') %}
+    <div class="lean_declarations">
+        <strong>Lean declarations:</strong>
         <ul class="uses">
           {% for lean, url in obj.userdata.lean_urls %}
           <li><a href="{{ url }}" class="lean_decl">{{ lean }}</a></li>
           {% endfor %}
         </ul>
-    {% endcall %}
+    </div>
     {% endif %}
 """)
 
@@ -145,19 +145,13 @@ GITHUB_ISSUE_TPL = Template("""
 
 LEAN_LINKS_TPL = Template("""
   {% if thm.userdata['lean_urls'] -%}
-    {%- if thm.userdata['lean_urls']|length > 1 -%}
-  <div class="tooltip">
-      <span class="lean_link">Lean</span>
-      <ul class="tooltip_list">
-        {% for name, url in thm.userdata['lean_urls'] %}
-           <li><a href="{{ url }}" class="lean_decl">{{ name }}</a></li>
-        {% endfor %}
-      </ul>
-  </div>
-    {%- else -%}
-    <a class="lean_link lean_decl" href="{{ thm.userdata['lean_urls'][0][1] }}">Lean</a>
-    {%- endif -%}
-    {%- endif -%}
+  <span class="lean_link">
+    Lean: 
+    {% for name, url in thm.userdata['lean_urls'] %}
+       <a href="{{ url }}" class="lean_decl">{{ name }}</a>{% if not loop.last %}, {% endif %}
+    {% endfor %}
+  </span>
+  {%- endif -%}
 """)
 
 GITHUB_LINK_TPL = Template("""
@@ -210,7 +204,7 @@ def ProcessOptions(options, document):
                 for leandecl in leandecls:
                     lean_urls.append(
                         (leandecl,
-                         f'{project_dochome}/find/#doc/{leandecl}'))
+                         f'{project_dochome}/find/?pattern={leandecl}#doc'))
 
                 node.userdata['lean_urls'] = lean_urls
 

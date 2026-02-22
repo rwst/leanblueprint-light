@@ -47,8 +47,13 @@ jobs:
           lint: true
           mk_all-check: true
 
-      - name: Compile blueprint and documentation
-        uses: leanprover-community/docgen-action@deed0cdc44dd8e5de07a300773eb751d33e32fc8 # 2025-10-26
-        with:
-          blueprint: true
-          homepage: home_page
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz texlive texlive-latex-extra latexmk
+          pip install leanblueprint-light
+      - name: Build Blueprint
+        run: |
+          leanblueprint-light pdf
+          leanblueprint-light web
+          leanblueprint-light checkdecls
