@@ -460,6 +460,12 @@ def pdf() -> None:
 
 def mk_web() -> None:
     (blueprint_root/"web").mkdir(exist_ok=True)
+    plastex_cfg = blueprint_root/"src"/"plastex.cfg"
+    if plastex_cfg.exists():
+        cfg_content = plastex_cfg.read_text()
+        new_cfg_content = re.sub(r'\bleanblueprint\b', 'leanblueprint_light', cfg_content)
+        if new_cfg_content != cfg_content:
+            plastex_cfg.write_text(new_cfg_content)
     subprocess.run("plastex -c plastex.cfg web.tex",
                    cwd=str(blueprint_root/"src"), check=True, shell=True)
 @cli.command()
