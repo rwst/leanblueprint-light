@@ -51,7 +51,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y graphviz texlive texlive-latex-extra latexmk
-          pip install leanblueprint-light
+          pip install git+https://github.com/rwst/leanblueprint-light.git
       - name: Build Blueprint
         run: |
           leanblueprint-light pdf

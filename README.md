@@ -59,7 +59,7 @@ See https://pygraphviz.github.io/documentation/stable/install.html otherwise.
 
 Then, assuming you have a sane python environment, you only need to run:
 ```
-pip install leanblueprint-light
+pip install git+https://github.com/rwst/leanblueprint-light.git
 ```
 Note this will automatically install plasTeX and the other needed python
 packages.
@@ -67,7 +67,7 @@ packages.
 ## Upgrading
 
 ```
-pip install -U leanblueprint-light
+pip install -U git+https://github.com/rwst/leanblueprint-light.git
 ```
 
 will upgrade to the latest version.
