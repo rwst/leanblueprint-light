@@ -50,10 +50,32 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y graphviz texlive texlive-latex-extra latexmk
+          sudo apt-get install -y graphviz libgraphviz-dev
           pip install git+https://github.com/rwst/leanblueprint-light.git
       - name: Build Blueprint
         run: |
-          leanblueprint-light pdf
           leanblueprint-light web
           leanblueprint-light checkdecls
+
+      - name: Copy artifacts to site directory
+        run: |
+          mkdir -p _site/blueprint
+          cp -r blueprint/web/* _site/blueprint/
+
+      - name: Upload to GitHub Pages
+        if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: _site/
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: build_project
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

@@ -12,6 +12,8 @@ Options:
 You can also add options that will be passed to the dependency graph package.
 """
 import string
+import subprocess
+import re
 from pathlib import Path
 
 from jinja2 import Template
@@ -161,6 +163,53 @@ GITHUB_LINK_TPL = Template("""
 """)
 
 
+def get_lean_declarations(project_root: Path):
+    declarations = {}
+    
+    decl_pattern = re.compile(
+        r'^\s*(?:protected\s+|private\s+|noncomputable\s+|unsafe\s+|partial\s+)*(?:def|theorem|lemma|abbrev|inductive|structure|class|instance)\s+([a-zA-Z0-9_.\[\]\'\"]+)',
+        re.MULTILINE
+    )
+    
+    namespace_pattern = re.compile(r'^\s*namespace\s+([a-zA-Z0-9_.\[\]\'\"]+)', re.MULTILINE)
+    end_pattern = re.compile(r'^\s*end\s+([a-zA-Z0-9_.\[\]\'\"]+)', re.MULTILINE)
+    
+    for lean_file in project_root.rglob('*.lean'):
+        if '.lake' in lean_file.parts:
+            continue
+            
+        try:
+            with open(lean_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+        except Exception:
+            continue
+            
+        namespaces = []
+        for line_num, line in enumerate(lines, 1):
+            ns_match = namespace_pattern.match(line)
+            if ns_match:
+                namespaces.append(ns_match.group(1))
+                continue
+                
+            end_match = end_pattern.match(line)
+            if end_match:
+                if namespaces and namespaces[-1] == end_match.group(1):
+                    namespaces.pop()
+                continue
+                
+            decl_match = decl_pattern.match(line)
+            if decl_match:
+                name = decl_match.group(1)
+                full_name = ".".join(namespaces + [name]) if namespaces else name
+                
+                if name.startswith('_root_.'):
+                    full_name = name[7:]
+                
+                rel_path = lean_file.relative_to(project_root).as_posix()
+                declarations[full_name] = (rel_path, line_num)
+                
+    return declarations
+
 def ProcessOptions(options, document):
     """This is called when the package is loaded."""
 
@@ -195,6 +244,18 @@ def ProcessOptions(options, document):
 
         project_dochome = document.userdata.get('project_dochome',
                                                 'https://leanprover-community.github.io/mathlib4_docs')
+        project_github = document.userdata.get('project_github', '')
+        
+        try:
+            project_root = Path(document.userdata['working-dir']).resolve().parent.parent
+            local_decls = get_lean_declarations(project_root)
+        except Exception:
+            local_decls = {}
+            
+        try:
+            commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=str(project_root)).decode('utf-8').strip()
+        except Exception:
+            commit_hash = 'main'
 
         for graph in document.userdata['dep_graph']['graphs'].values():
             nodes = graph.nodes
@@ -202,9 +263,12 @@ def ProcessOptions(options, document):
                 leandecls = node.userdata.get('leandecls', [])
                 lean_urls = []
                 for leandecl in leandecls:
-                    lean_urls.append(
-                        (leandecl,
-                         f'{project_dochome}/find/?pattern={leandecl}#doc'))
+                    if leandecl in local_decls and project_github:
+                        filepath, line_num = local_decls[leandecl]
+                        url = f'{project_github}/blob/{commit_hash}/{filepath}#L{line_num}'
+                    else:
+                        url = f'{project_dochome}/find/?pattern={leandecl}#doc'
+                    lean_urls.append((leandecl, url))
 
                 node.userdata['lean_urls'] = lean_urls
 
