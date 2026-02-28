@@ -86,6 +86,13 @@ jobs:
           mkdir -p _site/blueprint
           cp -r blueprint/web/* _site/blueprint/
 
+      - name: Cache-bust blueprint assets
+        run: |
+          CACHE_BUST=$(git rev-parse --short HEAD)
+          SITE_DIR=${{ env.HOME_PAGE_EXISTS == 'true' && 'home_page/_site' || '_site' }}
+          find "$SITE_DIR" -name '*.html' -exec sed -i -E \
+            "s/(href|src)=\"([^\"]*\.(css|js|wasm))\"/\1=\"\2?v=${CACHE_BUST}\"/g" {} +
+
       - name: Upload to GitHub Pages
         if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
